@@ -29,18 +29,43 @@ namespace Transfer
 
         private void btStart_Click(object sender, EventArgs e)
         {
-            if (!File.Exists(inputTextBox.Text))
+            if (textRadioButton.Checked && string.IsNullOrEmpty(inputTextBox.Text))
             {
-                MessageBox.Show("文件不存在");
+                MessageBox.Show("需要传输的文字不能为空");
+            }
+
+            if (fileRadioButton.Checked && (string.IsNullOrEmpty(inputTextBox.Text) || !File.Exists(inputTextBox.Text)))
+            {
+                MessageBox.Show("需要传输的文件不存在");
                 return;
             }
-            var fileInfo = new FileInfo(inputTextBox.Text);
 
             var prefix = "http://192.168.1.100:23789/";
             var guid = Guid.NewGuid().ToString("d").Split('-')[0];
-            var name = fileInfo.Name.Replace(fileInfo.Extension, string.Empty) + "-" + guid + fileInfo.Extension;
 
-            var outputText = prefix + name;
+            groupBox1.Enabled = false;
+
+            string qrText = string.Empty;
+            string rawUrl = string.Empty;
+            if (textRadioButton.Checked)
+            {
+                qrText = prefix + guid;
+                rawUrl = "/" + guid;
+            }
+            else
+            {
+                var fileInfo = new FileInfo(inputTextBox.Text);
+                var fileName = fileInfo.Name.Replace(fileInfo.Extension, string.Empty) + "-" + guid + fileInfo.Extension;
+                qrText = prefix + fileName;
+                rawUrl = "/" + fileName;
+            }
+
+            outputTextBox.Text = qrText;
+
+            QRCodeGenerator qrGenerator = new QRCodeGenerator();
+            QRCodeData qrCodeData = qrGenerator.CreateQrCode(qrText, QRCodeGenerator.ECCLevel.Q);
+            QRCode qrCode = new QRCode(qrCodeData);
+            pictureBox1.Image = qrCode.GetGraphic(10);
 
             listener.Prefixes.Clear();
             listener.Prefixes.Add(prefix);
@@ -54,7 +79,7 @@ namespace Transfer
                     try
                     {
                         var context = listener.GetContext();
-                        if (!("/" + name).Equals(context.Request.RawUrl))
+                        if (!rawUrl.Equals(context.Request.RawUrl))
                         {
                             continue;
                         }
@@ -100,20 +125,55 @@ namespace Transfer
                 }
             });
             task.Start();
-
-            QRCodeGenerator qrGenerator = new QRCodeGenerator();
-            QRCodeData qrCodeData = qrGenerator.CreateQrCode(outputText, QRCodeGenerator.ECCLevel.Q);
-            QRCode qrCode = new QRCode(qrCodeData);
-
-            outputTextBox.Text = outputText;
-
-            pictureBox1.Image = qrCode.GetGraphic(10);
         }
 
         private void btStop_Click(object sender, EventArgs e)
         {
             listener.Stop();
 
+            groupBox1.Enabled = true;
+        }
+
+        private void inputTextBox_DragEnter(object sender, DragEventArgs e)
+        {
+            if (!e.Data.GetDataPresent(DataFormats.FileDrop))
+            {
+                e.Effect = DragDropEffects.None;
+                return;
+            }
+
+            string[] items = e.Data.GetData(DataFormats.FileDrop) as string[];
+            if (items.Length != 1 || !File.Exists(items[0]))
+            {
+                e.Effect = DragDropEffects.None;
+                return;
+            }
+
+            e.Effect = DragDropEffects.Move;
+        }
+
+        private void inputTextBox_DragDrop(object sender, DragEventArgs e)
+        {
+            if (!e.Data.GetDataPresent(DataFormats.FileDrop))
+            {
+                return;
+            }
+
+            string[] items = e.Data.GetData(DataFormats.FileDrop) as string[];
+            if (items.Length != 1 || !File.Exists(items[0]))
+            {
+                return;
+            }
+
+            inputTextBox.Text = items[0];
+        }
+
+        private void MainForm_FormClosed(object sender, FormClosedEventArgs e)
+        {
+            if (listener.IsListening)
+            {
+                listener.Stop();
+            }
         }
     }
 }
