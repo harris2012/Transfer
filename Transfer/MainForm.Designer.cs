@@ -72,6 +72,7 @@
             this.inputTextBox.TabIndex = 2;
             this.inputTextBox.DragDrop += new System.Windows.Forms.DragEventHandler(this.inputTextBox_DragDrop);
             this.inputTextBox.DragEnter += new System.Windows.Forms.DragEventHandler(this.inputTextBox_DragEnter);
+            this.inputTextBox.KeyPress += new System.Windows.Forms.KeyPressEventHandler(this.TextBox_KeyPress);
             // 
             // btStop
             // 
@@ -112,6 +113,7 @@
             this.outputTextBox.ReadOnly = true;
             this.outputTextBox.Size = new System.Drawing.Size(709, 21);
             this.outputTextBox.TabIndex = 7;
+            this.outputTextBox.KeyPress += new System.Windows.Forms.KeyPressEventHandler(this.TextBox_KeyPress);
             // 
             // groupBox1
             // 

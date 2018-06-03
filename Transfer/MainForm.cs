@@ -27,6 +27,21 @@ namespace Transfer
             listener = new HttpListener();
         }
 
+        private void TextBox_KeyPress(object sender, KeyPressEventArgs e)
+        {
+            TextBox textBox = sender as TextBox;
+            if (textBox == null)
+            {
+                return;
+            }
+
+            if (e.KeyChar == (char)1)       // Ctrl-A 相当于输入了AscII=1的控制字符
+            {
+                textBox.SelectAll();
+                e.Handled = true;      // 不再发出“噔”的声音
+            }
+        }
+
         private void btStart_Click(object sender, EventArgs e)
         {
             if (textRadioButton.Checked && string.IsNullOrEmpty(inputTextBox.Text))
